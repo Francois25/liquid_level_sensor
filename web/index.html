@@ -1,0 +1,70 @@
+<!doctype html>
+<html  lang='fr'>
+  <head>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js" type="text/javascript">
+    </script>
+      
+    <script type="text/javascript">
+      $(document).ready(function() {
+
+          update_volume();
+
+          function update_volume() {
+              $.ajax({
+                      url: '/get_volume',
+                      dataType: 'json'
+                  })
+                  .done(function(data) {
+                      console.log(data);
+                      $('#volume').html(data.volume);
+                      setTimeout(update_volume, 5000);
+                  });
+          }
+      });
+    </script>
+    
+    <meta charset='UTF-8'>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <title>Capteur niveau eau</title>
+    <link rel="stylesheet" href="style.css">
+
+  </head>
+
+  <body style="
+  background: linear-gradient(0deg, rgba(0, 0, 0, 60%), rgba(0, 0, 0, 60%)), url('goutte_eau.jpg') no-repeat center center fixed;
+  -webkit-background-size: cover;
+  -moz-background-size: cover;
+  -o-background-size: cover;
+  background-size: cover;
+  margin: 50px;
+  font-family: Arial;
+  font-size: 0px;
+  overflow: visible;
+  color:rgb(255, 199, 109);
+">
+
+
+    <div class="contenu">
+
+      <h1 class="centre">Niveau d'eau dans la cuve</h1>
+      
+      <div class="tableau">
+        <div>
+        <p>Volume restant :</p>
+        </div>
+        
+        <div>
+          <table class="centre">
+              <tr>
+                  <th class="volume" id="volume">0.00</th>
+                  <th class="m3">m3</th>
+              </tr>
+          </table>
+        </div>
+      </div>
+      <h2 class="centre">capteur HCSR04 - Programmation python sur module ESP32 TTGO T-Display</h2>
+      <h2 class="centre">Développeur : Parola François</h2>
+    </div>
+  </body>
+</html>
