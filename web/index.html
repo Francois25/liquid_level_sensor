@@ -19,8 +19,40 @@
                       $('#volume').html(data.volume);
                       setTimeout(update_volume, 5000);
                   });
+                  
+          }
+                  
+          update_temp();
+
+          function update_temp() {
+              $.ajax({
+                      url: '/get_temp',
+                      dataType: 'json'
+                  })
+                  .done(function(data) {
+                      console.log(data);
+                      $('#temp').html(data.temp);
+                      setTimeout(update_temp, 5000);
+                  });
+                  
+          }          
+                  
+          update_hum();
+
+          function update_hum() {
+              $.ajax({
+                      url: '/get_hum',
+                      dataType: 'json'
+                  })
+                  .done(function(data) {
+                      console.log(data);
+                      $('#hum').html(data.hum);
+                      setTimeout(update_temp, 5000);
+                  });
+                  
           }
       });
+      
     </script>
     
     <meta charset='UTF-8'>
@@ -60,11 +92,18 @@
                   <th class="volume" id="volume">0.00</th>
                   <th class="m3">m3</th>
               </tr>
+              <tr>
+                <th class="volume" id="temp">0.00</th>
+                <th class="m3">°</th>
+                <th class="volume" id="hum">0.00</th>
+                <th class="m3">%</th>
+              </tr>
           </table>
         </div>
       </div>
-      <h2 class="centre">capteur HCSR04 - Programmation python sur module ESP32 TTGO T-Display</h2>
-      <h2 class="centre">Développeur : Parola François</h2>
+      <h2 class="centre">Programmation Python - MicroPython - Picoweb</h2>
+      <h2 class="centre">Board ESP32 TTGO T-Display - Sensors HCSR04 and DHT22</h2>
+      <h2 class="centre">Developer : Parola François</h2>
     </div>
   </body>
 </html>

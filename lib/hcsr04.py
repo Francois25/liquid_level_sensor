@@ -69,7 +69,7 @@ class HCSR04:
 
         # To calculate the distance we get the pulse_time and divide it by 200 
         # (the pulse walk the distance twice) and by 29.1 becasue
-        # the sound speed on air (343.2 m/s), that It's equivalent to
+        # the sound speed on air (343.2 m/s at 20°C), that It's equivalent to
         # 0.034320 cm/us that is 1m each 29.1us
         cms = (pulse_time / 2) / 29.1
         return cms
