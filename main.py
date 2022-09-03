@@ -8,24 +8,24 @@ import vga1_bold_16x32, vga2_16x16, vga1_8x8 # font
 import time
 import capteur_temp_humi
 
-# ------------------------------------------ WIFI CONNECT ----------------------------------------------------------------------
-# enter your own wifi ssid and your password
+
+# ------------------------------------------------- WIFI ----------------------------------------------------------------------
+#
+# enter your wifi ssid and your password
 ssid_wifi = "PAROLA_WIFI"
 password_wifi = "LilieLuluKelia25"
 
 ipaddress = wificonnect.connectSTA(ssid=ssid_wifi, password=password_wifi)
 
-# ------------------------------------------ TANK SIZE -------------------------------------------------------------------------
-# Enter the size of your own tank
+# ------------------------------------------------ SET UP ------------------------------------------------------------------
 
-# définition taille de la cuve
+# Enter the size of your own tank
 hauteur_max_eau = 1.60   # max level of liquid in meter  / hauteur d'eau maxi dans la cuve en m
 position_capteur = 0.22  # distance between sensor and max level in meter / distance entre le capteur et le niveau maxi de la cuve en m
 dimension_cuve_X = 1.10  # X size of the tank / taille de la cuve en X en m
 dimension_cuve_Y = 5.68  # Y size of the tank / taille de la cuve en Y en m
 capacite_cuve = int(round(hauteur_max_eau*dimension_cuve_X*dimension_cuve_Y))
 
-# -------------------------------------------------------------------------------------------------------------------------------
 
 # definition PIN module ESP32
 frequence_led = 500
@@ -35,10 +35,12 @@ led_verte2 = PWM(Pin(25, Pin.OUT, 0), frequence_led)
 led_jaune1 = PWM(Pin(33, Pin.OUT, 0), frequence_led)
 led_jaune2 = PWM(Pin(32, Pin.OUT, 0), frequence_led)
 led_rouge = PWM(Pin(12, Pin.OUT, 0), frequence_led)
-
-sensor = dht.DHT22(Pin(2))
 buzzer = Pin(15, Pin.OUT, 0)
 bouton = Pin(35,Pin.IN, Pin.PULL_UP)
+
+
+# definition PIN capteur température et humidité
+sensor = dht.DHT22(Pin(2))
 
 
 # definition du display
@@ -52,6 +54,8 @@ volume_max_cuve = round(surface_cuve * hauteur_max_eau, 2)
 volume_disponible = 0.00
 timer = Timer(0)
 
+
+# initialisation des LED
 def leds_init():
     led_bleu.duty(0)
     led_verte1.duty(0)
@@ -60,58 +64,20 @@ def leds_init():
     led_jaune2.duty(0)
     led_rouge.duty(0)
 
-# class prise_de_mesure:
-#   self.volume_disponible = 0
-#
-#
-# V = 331,5 + (0,6 x T)  => T : Température, V = vélocité
-# Distance = (Vélocité x Temps) / 2
-# V = (2*Distance)/Temps
-# Distance = (331,5 + (0,6 x T) * temps) / 2
-
+# affichage du message d'erreur sur l'écran
 def screen_error():
     tft.fill(st7789.BLACK)
-    #text = "MESURE"
-    #length_text = len(text)
-    #tft.text(vga1_bold_16x32, text, tft.width() // 2 - length_text // 2 * vga1_bold_16x32.WIDTH, 2 * tft.height() // 3 - vga1_bold_16x32.HEIGHT//2, st7789.RED, st7789.BLACK)
     tft.text(vga1_bold_16x32, "MESURE", 80, tft.height() // 3 - vga1_bold_16x32.HEIGHT//2, st7789.RED, st7789.BLACK)
     text = "ERRONEE"
     length_text=len(text)
     tft.text(vga1_bold_16x32, text, tft.width() // 2 - length_text // 2 * vga1_bold_16x32.WIDTH, 2 * tft.height() // 3 - vga1_bold_16x32.HEIGHT//2, st7789.RED, st7789.BLACK)
     
-def calcul_volume():
-    data = []
-    try:
-        for i in range(1, 10):
-            mesure = HCSR04(trigger_pin=22, echo_pin=21)
-            distance = mesure.distance_cm() / 100
-            data.append(distance)
-            print(distance)
-            time.sleep(0.05)
-        distance_moyenne = sum(data)/len(data)
-        if distance_moyenne > 0:
-            volume_disponible = round(((hauteur_max_eau + position_capteur) * surface_cuve) - (distance_moyenne * surface_cuve), 2)
-            print("Distance: ", distance_moyenne, " m\nVolume disponible: ", volume_disponible, " m3")
-            return volume_disponible
-        else:
-            return None           
-    except:
-        print('MEASUREMENT FAILED - SENSOR DISCONNECTED')
-        screen_error()
-        
-
-# class affichages:
-#  def __init__(self, tfton):
-#        self.tfton = tfton
-
+# eclairage de la led selon le niveau de liquide mesuré
 def affichage_analogique():
     global volume_disponible
     global temp
     global hum
-    temperature_humidite = capteur_temp_humi.sensor()
-    print(temperature_humidite)
-    nouveau_volume = calcul_volume() #  round(volume_disponible+.1, 2) #
-    print(nouveau_volume)
+    nouveau_volume = calcul_volume()
     if nouveau_volume != volume_disponible and nouveau_volume is not None:
         leds_init()
         volume_disponible = nouveau_volume
@@ -135,7 +101,35 @@ def affichage_analogique():
             led_bleu.duty(100)
     else:
         screen_error()
-            
+
+# calcul du volume de liquide présent dans la cuve
+def calcul_volume():
+    global temp
+    data = []
+    try:
+        for i in range(1, 10):
+            mesure = HCSR04(trigger_pin=22, echo_pin=21)
+            distance_mesuree = mesure.distance_cm() / 100
+            data.append(distance_mesuree)
+            print("mesure ", i ,": ", distance_mesuree)
+            time.sleep(0.05)
+        distance_moyenne = sum(data)/len(data)
+        distance_moyenne_corrigee = (distance_moyenne * temp) / 19.5
+        if distance_moyenne > 0:
+            print(f"distance moyenne : {distance_moyenne}m")
+            print(f"distance utilisée : {distance_moyenne_corrigee}m")
+            volume_disponible_avant_correction = round(((hauteur_max_eau + position_capteur) * surface_cuve) - (distance_moyenne * surface_cuve), 2)
+            print(f"Volume avant correction : {volume_disponible_avant_correction}m3")
+            volume_disponible = round(((hauteur_max_eau + position_capteur) * surface_cuve) - (distance_moyenne_corrigee * surface_cuve), 2)
+            print(f"Volume disponible utilisé: {volume_disponible}m3")
+            return volume_disponible
+        else:
+            return None           
+    except:
+        print('MEASUREMENT FAILED - SENSOR DISCONNECTED')
+        return None
+
+# affichage des informations sur l'écran
 def affichage_numerique():
     global volume_disponible
     global temp
@@ -161,13 +155,15 @@ def affichage_numerique():
     text = f"T: {str(temp)} deg  -  H: {str(hum)} %"
     length_text = len(text)
     tft.text(vga1_8x8, text, tft.width() // 2 - length_text // 2 * vga1_8x8.WIDTH, 120, st7789.CYAN)
-    
+
+# 
 def bouton_push(p):
     global tfton
     tfton = True
     tft.on()
     affichage_numerique()
-        
+
+# gestion du programme selon l'état de l'écran:
 def handleInterrupt(timer):
     global tfton
     if tfton:
@@ -182,14 +178,29 @@ def handleInterrupt(timer):
 
 # ---------------------------------------------------------
 # --------------------- START PROGRAMME -------------------
-
-
+# Ecran de démarrage
 tft.fill(st7789.GREEN)
 tft.text(vga1_bold_16x32, " POWER ON", 45, 10, st7789.RED, st7789.GREEN)
 tft.text(vga1_bold_16x32, "NIVEAU DE", 45, 50, st7789.BLUE, st7789.GREEN)
 tft.text(vga1_bold_16x32, "LA CUVE :", 50, 85, st7789.BLUE, st7789.GREEN)
 time.sleep(4)
 
+# prise de mesure température et humidité sur capteur DHT22
+temperature_humidite = capteur_temp_humi.sensor()
+temp = round(temperature_humidite[0], 2)
+print("temperature = ", temperature_humidite[0])
+hum = round(temperature_humidite[1], 2)
+print("humidite = ",temperature_humidite[1])
+
+# calcul de la vitesse du son en fonction de la température
+vitesse_son = 331.3 + 0.606 * temp
+print(f"vitesse du son : {vitesse_son}")
+
+# utilisation du bouton poussoir de la board pour allumer l'écran
+bouton.irq(trigger=Pin.IRQ_FALLING, handler=bouton_push)
+
+# relance de la prise de mesure toutes les 10 secondes
+timer.init(period=10000, mode=Timer.PERIODIC, callback=handleInterrupt)
 
 # ---- Routing Picoweb ------------------------------------ 
 app = picoweb.WebApp(__name__)
@@ -221,7 +232,4 @@ def index(req, resp):
         print("Image file not found.")
         pass
 
-
-bouton.irq(trigger=Pin.IRQ_FALLING, handler=bouton_push)
-timer.init(period=10000, mode=Timer.PERIODIC, callback=handleInterrupt)
 app.run(debug=True, host = ipaddress, port = 80)
