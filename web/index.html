@@ -1,14 +1,14 @@
 <!doctype html>
 <html  lang='fr'>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
   <head>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js" type="text/javascript">
     </script>
       
     <script type="text/javascript">
       $(document).ready(function() {
-
           update_volume();
-
           function update_volume() {
               $.ajax({
                       url: '/get_volume',
@@ -18,48 +18,34 @@
                       console.log(data);
                       $('#volume').html(data.volume);
                       setTimeout(update_volume, 5000);
-                  });
-                  
-          }
-                  
-          update_temp();
-
-          function update_temp() {
-              $.ajax({
-                      url: '/get_temp',
-                      dataType: 'json'
-                  })
-                  .done(function(data) {
-                      console.log(data);
-                      $('#temp').html(data.temp);
-                      setTimeout(update_temp, 5000);
-                  });
-                  
-          }          
-                  
-          update_hum();
-
-          function update_hum() {
-              $.ajax({
-                      url: '/get_hum',
-                      dataType: 'json'
-                  })
-                  .done(function(data) {
-                      console.log(data);
-                      $('#hum').html(data.hum);
-                      setTimeout(update_temp, 5000);
-                  });
-                  
-          }
+                  });   
+          }      
       });
-      
+    </script>
+
+    <script type="text/javascript">
+      $(document).ready(function() {
+          update_temperature();
+          function update_temperature() {
+              $.ajax({
+                      url: '/get_temperature',
+                      dataType: 'json'
+                  })
+                  .done(function(data) {
+                      console.log(data);
+                      $('#temperature').html(data.temperature);
+                      setTimeout(update_temperature, 5000);
+                  });   
+          }      
+      });
     </script>
     
     <meta charset='UTF-8'>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
-    <title>Capteur niveau eau</title>
+    <title>Capteur Ultrason</title>
     <link rel="stylesheet" href="style.css">
+
 
   </head>
 
@@ -73,37 +59,43 @@
   font-family: Arial;
   font-size: 0px;
   overflow: visible;
-  color:rgb(255, 199, 109);
-">
+  color:rgb(255, 199, 109);">
 
 
     <div class="contenu">
 
-      <h1 class="centre">Niveau d'eau dans la cuve</h1>
+      <h1 class="centre">Informations cuve</h1>
       
       <div class="tableau">
         <div>
-        <p>Volume restant :</p>
-        </div>
-        
-        <div>
           <table class="centre">
-              <tr>
-                  <th class="volume" id="volume">0.00</th>
-                  <th class="m3">m3</th>
-              </tr>
-              <tr>
-                <th class="volume" id="temp">0.00</th>
-                <th class="m3">°</th>
-                <th class="volume" id="hum">0.00</th>
-                <th class="m3">%</th>
-              </tr>
+            <p>
+              <i class="fas fa-water" style="color:#056e9e;"></i>
+              <span class="donnees">Volume restant : </span> 
+              <span id="volume">0.00</span>
+              <span class="donnees">m</span>
+              <sup class="units">3</sup>
+            </p>
+            <br>
+            <p>
+              <i class="fas fa-thermometer-half" style="color:#059e8a;"></i> 
+              <span class="dht-labels">Temperature : </span> 
+              <span id="temperature">0.00</span>
+              <span class="donnees">°C</span>
+            </p>
+            <br>
+            <p>
+              <i class="fas fa-tint" style="color:#00add6;"></i> 
+              <span class="dht-labels">Humidité : </span>
+              <span id="hum">0.00</span>
+              <span class="donnees">%</span>
+            </p>
           </table>
         </div>
       </div>
-      <h2 class="centre">Programmation Python - MicroPython - Picoweb</h2>
-      <h2 class="centre">Board ESP32 TTGO T-Display - Sensors HCSR04 and DHT22</h2>
-      <h2 class="centre">Developer : Parola François</h2>
+      <h2 class="centre">Programmation MicroPython - Picoweb sur module ESP32 TTGO T-Display</h2>
+      <h2 class="centre">capteur HCSR04 et DHT22</h2>
+      <h2 class="centre">Développeur : Parola François</h2>
     </div>
   </body>
 </html>

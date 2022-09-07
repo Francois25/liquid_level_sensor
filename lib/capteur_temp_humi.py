@@ -12,16 +12,15 @@ def sensor():
         sensor.measure()
         temp = sensor.temperature()
         hum = sensor.humidity()
-        if temp and hum:#(isinstance(temp, float) and isinstance(hum, float)) or (isinstance(temp, int) and isinstance(hum, int)):
-            #msg = (b'{0:3.1f},{1:3.1f}'.format(temp, hum))
-
+        if temp and hum:
             # uncomment for Fahrenheit
             #temp = temp * (9/5) + 32.0
-
-            #hum = round(hum, 2)
-            #return(msg)
             return temp, hum
         else:
-            return('Invalid sensor reading')
-    except OSError as e:
-        return("ERROR: Failed to return sensor information")
+            print('Invalid temperature sensor reading')
+            print('Temp value use : 15°C')
+            return None
+    except:
+        print("EXCEPT ERROR: Failed to return temperature sensor informations")
+        print("EXCEPT ERROR : temp value use : 15°C")
+        return None
