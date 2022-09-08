@@ -5,37 +5,11 @@
   margin-bottom: 100px;
 }
 
-h2 {
-  font-size: 12px;
-}
-
-h1 {
-  font-size: 60px;
-}
-
-.centre {
-  text-align: center;
-  width: 100%;
-}
-
-th.donnees {
-text-align: right;
-}
-
-th.m3 {
-  text-align: left;
-  padding-left: 20px;
-}
-
-th {
-  font-size: 80px;
-}
-
 div.tableau {
-  font-size: 50px;
+  font-size: 38px;
   position: relative;
   text-align: center;
-  width: 90%;
+  width: 96%;
   color: rgb(255, 199, 109);
   margin: 0px 20px 30px 20px;
   display: inline-block;
@@ -45,7 +19,35 @@ div.tableau {
   height: max-content;
 }
 
-p {
-  margin: 0px;
+h1 {
+  font-size: 80px;
+  margin-top: 0px;
+}
+.centre {
+  color: rgb(83 185 161);
+  text-align: center;
+  width: 100%;
 }
 
+.data {
+text-align: right;
+}
+
+.cube {
+  text-align: left;
+}
+
+.titre {
+  text-align: center;
+}
+
+p.box {
+  margin-top: 0px;
+  margin-bottom: 0px;
+}
+
+p.dev {
+  color: rgb(0, 0, 0);
+  font-size: 13px;
+  margin-bottom: 0px;
+}

@@ -177,7 +177,7 @@ def affichage_numerique():
         length_text = len(text)
         tft.text(vga1_8x8, text, tft.width() // 2 - length_text // 2 * vga1_8x8.WIDTH, 120, st7789.CYAN)
 
-# 
+# Mise sous tension de l'écran
 def bouton_push(p):
     global tfton
     tfton = True
@@ -201,7 +201,7 @@ def handleInterrupt(timer):
             tft.off()
             affichage_analogique()
     else:
-        print("Mesure impossible")
+        print("ERROR : Impossible mesurement")
 
 
 
@@ -227,20 +227,12 @@ def index(req, resp):
     yield from picoweb.start_response(resp)
     yield from app.sendfile(resp, '/web/index.html')
 
-@app.route("/get_volume")
+@app.route("/get_data")
 def get_volume(req, resp):
     global volume_disponible
-    yield from picoweb.jsonify(resp, {'volume': volume_disponible})
-
-@app.route("/get_temperature")
-def get_volume(req, resp):
     global temp
-    yield from picoweb.jsonify(resp, {'temperature': temp})
-
-@app.route("/get_humidite")
-def get_volume(req, resp):
     global hum
-    yield from picoweb.jsonify(resp, {'humidite': hum})
+    yield from picoweb.jsonify(resp, {'volume': volume_disponible, 'temperature': temp, 'humidite': hum})
 
 @app.route("/style.css")
 def css(req, resp):
@@ -261,4 +253,5 @@ def index(req, resp):
         pass
 
 app.run(debug=True, host = ipaddress, port = 80)
+
 
