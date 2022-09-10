@@ -1,4 +1,4 @@
-# Prise de mesure du capteur de température et d'humidité
+# Temperature and humidity sensor measurement socket
 #--------------------------------------------------------
 import dht
 from machine import Pin
