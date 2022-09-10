@@ -1,6 +1,6 @@
-# Liquid_level_sensor presentation :
+# Liquid level sensor for tank presentation :
 
-Ultrasonic sensor for measuring the height of a liquid in a rectangular tank with analogue display of the data by means of coloured LEDs, the analogue display is done on the screen of an ESP32-TTGO-T-Display and an internet page.
+The tank liquid level sensor is an ultrasonic sensor housing. One housing is used to measure the height of a liquid in a rectangular tank and the other contains an analogue display of the data by means of coloured LEDs. The digital display is shown on the screen of an ESP32-TTGO-T-Display and on a web page.
 
 # Micropython firmware :
 The firmware used is Micropython, downloadable here: [MicroPython firmware for ESP32](https://micropython.org/download/esp32spiram/)  
@@ -13,7 +13,7 @@ In the main.py file it is necessary to enter your own SSId and password on lines
 If there is a problem with the ultrasonic sensor, the screen will display an error message in red on a black background, so check the status of the sensor in the tank.
 If there is a problem with the temperature sensor, the screen displays in red on a yellow background the temperature at 15° and the humidity at 0%.
 
-All the libraries for the project to be functional can be found in the folder [/lib] folder (https://github.com/Francois25/liquid_level_sensor/tree/master/lib)
+All the libraries for the project to be functional can be found in the folder [/lib](https://github.com/Francois25/liquid_level_sensor/tree/master/lib)
 All the fonts for the project to be functional are in the folder [/font](https://github.com/Francois25/liquid_level_sensor/tree/master/font)
 
 # Addon :
