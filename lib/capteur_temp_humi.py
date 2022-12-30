@@ -1,4 +1,4 @@
-# Temperature and humidity sensor measurement socket
+# Prise de mesure du capteur de température et d'humidité
 #--------------------------------------------------------
 import dht
 from machine import Pin
@@ -21,6 +21,6 @@ def sensor():
             print('Temp value use : 15°C')
             return None
     except:
-        print("EXCEPT ERROR: Failed to return temperature sensor informations")
+        print("EXCEPT ERROR: Failed to return temperature sensor information")
         print("EXCEPT ERROR : temp value use : 15°C")
         return None

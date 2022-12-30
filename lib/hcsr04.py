@@ -74,4 +74,3 @@ class HCSR04:
         # 0.034320 cm/us that is 1m each 29.1us
         cms = (pulse_time / 2) / (10000/__main__.sound_speed)
         return cms
-        

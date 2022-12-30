@@ -7,15 +7,14 @@ import picoweb #affichage de la page web, ajouter utemplate, pgk_ressources et u
 import vga1_bold_16x32, vga2_16x16, vga1_8x8, vga2_bold_16x32 # font
 import time
 import capteur_temp_humi
+import wificonfig
 
 
 # ------------------------------------------------- WIFI ----------------------------------------------------------------------
 #
-# enter your wifi ssid and your password
-ssid_wifi = "PAROLA_WIFI"
-password_wifi = "LilieLuluKelia25"
+# enter your wifi ssid and your password in wificonfig file
 
-ipaddress = wificonnect.connectSTA(ssid=ssid_wifi, password=password_wifi)
+ipaddress = wificonnect.connectSTA(ssid=wificonfig.ssid, password=wificonfig.password)
 
 # ------------------------------------------------ SET UP ------------------------------------------------------------------
 # Enter the size of your own tank
@@ -33,16 +32,17 @@ led_verte2 = PWM(Pin(25, Pin.OUT, 0), frequence_led)
 led_jaune1 = PWM(Pin(33, Pin.OUT, 0), frequence_led)
 led_jaune2 = PWM(Pin(32, Pin.OUT, 0), frequence_led)
 led_rouge = PWM(Pin(12, Pin.OUT, 0), frequence_led)
-buzzer = Pin(15, Pin.OUT, 0)
+buzzer = PWM(Pin(15, Pin.OUT, 0))
 button = Pin(35,Pin.IN, Pin.PULL_UP)
 
 # PIN definition temperature and humidity sensor
 sensor = dht.DHT22(Pin(2))
 
-# Display definition
+# Display box init
 tfton = not button
 tft = tft_config.config()
 tft.init() # initialisation de l'écran
+buzzer.duty(1)
 
 # Variables definition
 surface_cuve = dimension_cuve_X * dimension_cuve_Y
@@ -87,7 +87,7 @@ def leds_init():
 def screen_error():
     tft.fill(st7789.BLACK)
     tft.text(vga1_bold_16x32, "MESURE FAILED", 15, tft.height() // 3 - vga1_bold_16x32.HEIGHT//2, st7789.RED, st7789.BLACK)
-    text = "Push RESET"
+    text = "PUSH RESET"
     length_text=len(text)
     tft.text(vga1_bold_16x32, text, tft.width() // 2 - length_text // 2 * vga1_bold_16x32.WIDTH, 2 * tft.height() // 3 - vga1_bold_16x32.HEIGHT//2, st7789.RED, st7789.BLACK)
 
@@ -102,6 +102,7 @@ def screen_error_temp():
 def analogue_display():
     global volume_available
     leds_init()
+    buzzer.duty(1)
     if volume_max_cuve > volume_available >= 0.1*volume_max_cuve:
         if volume_available >= 0.9*volume_max_cuve:
             led_bleu.duty(50)
@@ -116,7 +117,7 @@ def analogue_display():
         elif 0.1*volume_max_cuve <= volume_available < 0.2*volume_max_cuve:
             led_rouge.duty(10)
     elif 0 <= volume_available < 0.1*volume_max_cuve:
-        buzzer.on()
+        buzzer.duty(250)
         led_rouge.duty(30)
     elif volume_available >= volume_max_cuve:
         led_bleu.duty(100)
@@ -171,7 +172,7 @@ def digital_display():
         tft.text(vga1_bold_16x32, "FULL TANK ", 40, tft.height() // 2 - vga1_bold_16x32.HEIGHT//2, st7789.BLUE, st7789.CYAN)
     else:
         screen_error()
-    if temp == 15 or hum == 0:
+    if temp == 15 and hum == 0:
         screen_error_temp()
     else:
         text = f"T: {str(temp)} deg  -  H: {str(hum)} %"
@@ -257,5 +258,6 @@ def index(req, resp):
         pass
 
 app.run(debug=True, host = ipaddress, port = 80)
+
 
 
