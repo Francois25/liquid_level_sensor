@@ -5,4 +5,5 @@
 /.idea
 /venv
 pymakr.conf
-wificonnect.py
+wificonfig.py
+statistics.py
