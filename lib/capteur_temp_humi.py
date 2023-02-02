@@ -3,8 +3,6 @@
 import dht
 from machine import Pin
 
-temp = 0.00
-hum = 0.00
 
 def sensor():
     sensor = dht.DHT22(Pin(2))

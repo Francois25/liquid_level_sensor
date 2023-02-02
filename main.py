@@ -5,9 +5,10 @@ import time, utime, wificonnect
 import tft_config, st7789 #lib tft pour affichage sur ttgo t-display
 import picoweb #affichage de la page web, ajouter utemplate, pgk_ressources et ulogging aux lib
 import vga1_bold_16x32, vga2_16x16, vga1_8x8, vga2_bold_16x32 # font
-import time
 import capteur_temp_humi
 import wificonfig
+import data_analyse
+
 
 
 # ------------------------------------------------- WIFI ----------------------------------------------------------------------
@@ -47,21 +48,17 @@ buzzer.duty(1)
 # Variables definition
 surface_cuve = dimension_cuve_X * dimension_cuve_Y
 volume_max_cuve = round(surface_cuve * maximum_water_level, 2)
-volume_available = 0.00
 timer = Timer(0)
 
 # Mesurement temperature and humidity on DHT22 sensor
 def temperature_humidity_measurement():
-    global temp
-    global hum
-    global sound_speed
-    temperature_humidity = capteur_temp_humi.sensor()
+    temperature_humidity = capteur_temp_humi.sensor() # return temp, hum
     if not temperature_humidity == None:
         temp = round(temperature_humidity[0], 2)
         print("")    
-        print("temperature = ", temperature_humidity[0])
+        print("temperature = ", temp)
         hum = round(temperature_humidity[1], 2)
-        print("Humidity = ",temperature_humidity[1])
+        print("Humidity = ",hum)
         sound_speed = 331.3 + 0.606 * temp
         print(f"Sound speed : {sound_speed}")
         print('')
@@ -70,7 +67,7 @@ def temperature_humidity_measurement():
         temp = 15
         hum = 0
         sound_speed = 331.3 + 0.606 * temp
-        screen_error_temp()
+        screen_error_temp(temp, hum)
         return sound_speed, temp, hum
 
 
@@ -92,40 +89,37 @@ def screen_error():
     tft.text(vga1_bold_16x32, text, tft.width() // 2 - length_text // 2 * vga1_bold_16x32.WIDTH, 2 * tft.height() // 3 - vga1_bold_16x32.HEIGHT//2, st7789.RED, st7789.BLACK)
 
 # Display on screen if mesurement error
-def screen_error_temp():
+def screen_error_temp(temp, hum):
     text = f"T: {str(temp)} deg    -    H: {str(hum)} %"
     length_text = len(text)
     tft.text(vga1_8x8, text, tft.width() // 2 - length_text // 2 * vga1_8x8.WIDTH, 120, st7789.RED, st7789.YELLOW)
 
 
 # LEDs illumination according to the measured liquid level
-def analogue_display():
-    global volume_available
+def analogue_display(volume):
     leds_init()
     buzzer.duty(1)
     if volume_max_cuve > volume_available >= 0.1*volume_max_cuve:
-        if volume_available >= 0.9*volume_max_cuve:
+        if volume >= 0.9*volume_max_cuve:
             led_bleu.duty(50)
-        elif 0.8*volume_max_cuve <= volume_available < 0.9*volume_max_cuve:
+        elif 0.8*volume_max_cuve <= volume < 0.9*volume_max_cuve:
             led_verte1.duty(30)
-        elif 0.6*volume_max_cuve <= volume_available < 0.8*volume_max_cuve:
+        elif 0.6*volume_max_cuve <= volume < 0.8*volume_max_cuve:
             led_verte2.duty(30)
-        elif 0.4*volume_max_cuve <= volume_available < 0.6*volume_max_cuve:
+        elif 0.4*volume_max_cuve <= volume < 0.6*volume_max_cuve:
             led_jaune1.duty(30)
-        elif 0.2*volume_max_cuve <= volume_available < 0.4*volume_max_cuve:
+        elif 0.2*volume_max_cuve <= volume < 0.4*volume_max_cuve:
             led_jaune2.duty(30)
-        elif 0.1*volume_max_cuve <= volume_available < 0.2*volume_max_cuve:
+        elif 0.1*volume_max_cuve <= volume < 0.2*volume_max_cuve:
             led_rouge.duty(10)
-    elif 0 <= volume_available < 0.1*volume_max_cuve:
+    elif 0 <= volume < 0.1*volume_max_cuve:
         buzzer.duty(250)
         led_rouge.duty(30)
-    elif volume_available >= volume_max_cuve:
+    elif volume >= volume_max_cuve:
         led_bleu.duty(100)
 
 # Calculation of the volume of liquid in the tank
-def calculation_volume():
-    global volume_available
-    global temp
+def calculation_volume(sound_speed, temp):
     data = []
     try:
         for i in range(1, 10):
@@ -146,34 +140,31 @@ def calculation_volume():
             return volume_available
         else:
             print("Mesurement <= 0, no sensor response")
-            screen_error()       
+            screen_error()
     except:
         print('EXPECT : MEASUREMENT FAILED - SENSOR HCSR KO')
         screen_error()
 
 # displaying level tank information on the screen 
-def digital_display():
-    global volume_available
-    global temp
-    global hum
-    if volume_max_cuve > volume_available >= 0.1*volume_max_cuve:
+def digital_display(volume, hum, temp):
+    if volume_max_cuve > volume >= 0.1*volume_max_cuve:
         tft.fill(st7789.BLACK)
         tft.text(vga1_bold_16x32, "TANK LEVEL", 35, 10, st7789.CYAN)
         tft.text(vga2_16x16, f"Capacity: {str(tank_capacity)}m3", 6, 55, st7789.YELLOW)
-        text = f"Remainder:{str(volume_available)}"
+        text = f"Remainder:{str(volume)}"
         length_text = len(text)
         tft.text(vga2_16x16, text, tft.width() // 2 - length_text // 2 * vga2_16x16.WIDTH, 80, st7789.GREEN)
-    elif 0 <= volume_available < 0.1*volume_max_cuve:
+    elif 0 <= volume < 0.1*volume_max_cuve:
         tft.fill(st7789.YELLOW)
         tft.text(vga1_bold_16x32, "EMPTY TANK", 45, tft.height() // 3 - vga1_bold_16x32.HEIGHT//2, st7789.RED, st7789.YELLOW)
         tft.text(vga1_bold_16x32, "LEVEL < 1 m3", 15, (tft.height() // 3)*2 - vga1_bold_16x32.HEIGHT//2, st7789.RED, st7789.YELLOW)
-    elif volume_available >= volume_max_cuve:
+    elif volume >= volume_max_cuve:
         tft.fill(st7789.CYAN)
         tft.text(vga1_bold_16x32, "FULL TANK ", 40, tft.height() // 2 - vga1_bold_16x32.HEIGHT//2, st7789.BLUE, st7789.CYAN)
     else:
         screen_error()
     if temp == 15 and hum == 0:
-        screen_error_temp()
+        screen_error_temp(temp, hum)
     else:
         text = f"T: {str(temp)} deg  -  H: {str(hum)} %"
         length_text = len(text)
@@ -181,29 +172,31 @@ def digital_display():
 
 # Turning ON display
 def button_push(p):
-    global tfton
     tfton = True
     tft.on()
     digital_display()
+    return tfton
 
 # Management according to the state of the screen:
-def handleInterrupt(timer):
-    global tfton
-    global volume_available
-    global sound_speed
-    temperature_humidity_measurement()
-    mesure_volume = calculation_volume()
-    if mesure_volume:
+def handleInterrupt(timer, tfton):
+    mesure = temperature_humidity_measurement()      # return sound_speed, temp, hum
+    sound_speed=mesure[0]
+    temp = mesure[1]
+    hum = mesure[2]
+    volume_available = calculation_volume(sound_speed, temp)       # return volume_available
+    if volume_available:
         if tfton:
             tft.on()
-            analogue_display()
-            digital_display()
+            analogue_display(volume_available)
+            digital_display(volume_available, hum, temp)
             tfton = False
+            return tfton
         else:
             tft.off()
-            analogue_display()
+            analogue_display(volume_available)
     else:
         print("ERROR : Impossible mesurement")
+    data_analyse.send_data(volume_available)
 
 
 
@@ -258,6 +251,4 @@ def index(req, resp):
         pass
 
 app.run(debug=True, host = ipaddress, port = 80)
-
-
 
