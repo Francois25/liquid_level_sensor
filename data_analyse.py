@@ -2,7 +2,7 @@ from datetime import datetime
 import json
 
 def send_data(mesure):
-    date = datetime.today()
+    date = datetime.now()
     date = date.strftime("%d.%m.%y %X")
     with open("niveau_eau.json", "r") as f:
         donnees = json.load(f)

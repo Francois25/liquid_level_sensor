@@ -9,8 +9,6 @@ import capteur_temp_humi
 import wificonfig
 import data_analyse
 
-
-
 # ------------------------------------------------- WIFI ----------------------------------------------------------------------
 #
 # enter your wifi ssid and your password in wificonfig file
@@ -53,22 +51,22 @@ timer = Timer(0)
 # Mesurement temperature and humidity on DHT22 sensor
 def temperature_humidity_measurement():
     temperature_humidity = capteur_temp_humi.sensor() # return temp, hum
-    if not temperature_humidity == None:
+    if temperature_humidity is not None:
         temp = round(temperature_humidity[0], 2)
-        print("")    
+        print("")
         print("temperature = ", temp)
         hum = round(temperature_humidity[1], 2)
         print("Humidity = ",hum)
         sound_speed = 331.3 + 0.606 * temp
         print(f"Sound speed : {sound_speed}")
         print('')
-        return sound_speed, temp, hum
     else:
         temp = 15
         hum = 0
         sound_speed = 331.3 + 0.606 * temp
         screen_error_temp(temp, hum)
-        return sound_speed, temp, hum
+
+    return sound_speed, temp, hum
 
 
 # LEDs initialization 
@@ -137,11 +135,12 @@ def calculation_volume(sound_speed, temp):
             print(f"Volume before correction: {volume_available_avant_correction}m3")
             volume_available = round(((maximum_water_level + sensor_position) * surface_cuve) - (distance_moyenne_corrigee * surface_cuve), 2)
             print(f"Available volume used: {volume_available}m3")
+            data_analyse.send_data(volume_available)
             return volume_available
         else:
             print("Mesurement <= 0, no sensor response")
             screen_error()
-    except:
+    except Exception:
         print('EXPECT : MEASUREMENT FAILED - SENSOR HCSR KO')
         screen_error()
 
@@ -172,10 +171,9 @@ def digital_display(volume, hum, temp):
 
 # Turning ON display
 def button_push(p):
-    tfton = True
     tft.on()
     digital_display()
-    return tfton
+    return True
 
 # Management according to the state of the screen:
 def handleInterrupt(timer, tfton):
@@ -196,7 +194,6 @@ def handleInterrupt(timer, tfton):
             analogue_display(volume_available)
     else:
         print("ERROR : Impossible mesurement")
-    data_analyse.send_data(volume_available)
 
 
 
@@ -216,7 +213,7 @@ tft.text(vga2_bold_16x32, text, tft.width() // 2 - length_text // 2 * vga2_bold_
 button.irq(trigger=Pin.IRQ_FALLING, handler=button_push)
 
 # restarting the measurement every 10 seconds
-timer.init(period=10000, mode=Timer.PERIODIC, callback=handleInterrupt)
+timer.init(period=600000, mode=Timer.PERIODIC, callback=handleInterrupt) # refresh toutes les 10 mn
 
 # ---- Routing Picoweb ------------------------------------ 
 app = picoweb.WebApp(__name__)
@@ -248,7 +245,6 @@ def index(req, resp):
         yield from resp.awrite(img)
     except Exception:
         print("Image file not found.")
-        pass
 
 app.run(debug=True, host = ipaddress, port = 80)
 
