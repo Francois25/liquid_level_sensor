@@ -25,6 +25,6 @@ def connectAP(name, password=''):
     ap.config(ssid=name, password=password)
     ap.config(max_clients=3)
     while ap.active() == False:
-      pass
+        pass
     print('Acces Point config:', ap.ifconfig())
     return ap.ifconfig()[0]
