@@ -1,8 +1,7 @@
 # Prise de mesure du capteur de température et d'humidité
 #--------------------------------------------------------
-import dht
 from machine import Pin
-
+import dht
 
 def sensor():
     sensor = dht.DHT22(Pin(2))
