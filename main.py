@@ -1,5 +1,4 @@
 from machine import * #lib utilisation module ESP32
-import dht
 from hcsr04 import HCSR04 #lib capteur HCSR-04
 import utime, wificonnect
 import tft_config, st7789 #lib tft pour affichage sur ttgo t-display
@@ -8,16 +7,16 @@ import vga1_bold_16x32, vga2_16x16, vga1_8x8, vga2_bold_16x32 # font
 import capteur_temp_humi
 import wificonfig
 import data_analyse
-import gc
 
-# effacement de la mémoire du module ESP
-gc.collect()
 
 # ------------------------------------------------- WIFI ----------------------------------------------------------------------
 #
 # enter your wifi ssid and your password in wificonfig file
 
 ipaddress = wificonnect.connectSTA(ssid=wificonfig.ssid, password=wificonfig.password)
+
+if ipaddress == "0.0.0.0":
+    machine.reset()
 
 # ------------------------------------------------ SET UP ------------------------------------------------------------------
 # Taille de la cuve
@@ -38,9 +37,6 @@ led_rouge = PWM(Pin(12, Pin.OUT, 0), frequence_led)
 buzzer = PWM(Pin(15, Pin.OUT, 0))
 button = Pin(35,Pin.IN, Pin.PULL_UP)
 
-# Définition du PIN du capteur de temperature et d'humidité
-sensor = dht.DHT22(Pin(2))
-
 # Initialisation de l'écran tft
 tfton = not button
 tft = tft_config.config()
@@ -54,6 +50,11 @@ timer = Timer(0)
 
 # Mesure de la température et de l'humidité avec le capteur DHT22
 def temperature_humidity_measurement():
+    """send values of temperature and humidity since DHT22 sensor and calcul the value of sound speed according to the temperature
+
+    Returns:
+        float: temperature value (temp) and humidity value (hum)
+    """
     temperature_humidity = capteur_temp_humi.sensor() # temp, hum
     if temperature_humidity is not None:
         temp = round(temperature_humidity[0], 2)
@@ -72,9 +73,10 @@ def temperature_humidity_measurement():
 
     return sound_speed, temp, hum
 
-
 # Initialization des LED
 def leds_init():
+    """Initialise/switch off - all the led of the device
+    """
     led_bleu.duty(0)
     led_verte1.duty(0)
     led_verte2.duty(0)
@@ -84,6 +86,8 @@ def leds_init():
 
 # Affichage erreur sur écran tft
 def screen_error():
+    """Display the error message if the mesures of infrared sensor is failed
+    """
     tft.fill(st7789.BLACK)
     tft.text(vga1_bold_16x32, "MESURE FAILED", 15, tft.height() // 3 - vga1_bold_16x32.HEIGHT//2, st7789.RED, st7789.BLACK)
     text = "PUSH RESET"
@@ -92,6 +96,12 @@ def screen_error():
 
 # Affichage d'erreur de mesure température et/ou humidité sur l'écran tft
 def screen_error_temp(temp, hum):
+    """Display the error message on screen if the mesures of temperature and humidity are failed
+
+    Args:
+        temp (int): temperature value
+        hum (int): humidity value
+    """
     text = f"T: {str(temp)} deg    -    H: {str(hum)} %"
     length_text = len(text)
     tft.text(vga1_8x8, text, tft.width() // 2 - length_text // 2 * vga1_8x8.WIDTH, 120, st7789.RED, st7789.YELLOW)
@@ -99,9 +109,14 @@ def screen_error_temp(temp, hum):
 
 # Allumage des LED selon le niveau d'eau mesuré
 def analogue_display(volume):
+    """Switch on/off the light and the buzzer on the device according to the calculed volume of water.
+
+    Args:
+        volume (float): volume of water in m3
+    """
     leds_init()
     buzzer.duty(1)
-    if volume_max_cuve > volume_available >= 0.1*volume_max_cuve:
+    if volume_max_cuve > volume >= 0.1*volume_max_cuve:
         if volume >= 0.9*volume_max_cuve:
             led_bleu.duty(50)
         elif 0.8*volume_max_cuve <= volume < 0.9*volume_max_cuve:
@@ -122,6 +137,15 @@ def analogue_display(volume):
 
 # Calcul du volume d'eau dans la cuve
 def calculation_volume(sound_speed, temp):
+    """Calcul of the volume of water in the tank.
+
+    Args:
+        sound_speed (float): sound of speed calculed in 
+        temp (float): temperature of air in the tank
+
+    Returns:
+        float: volume value of water in the tank
+    """
     data = []
     try:
         for i in range(1, 10):
@@ -149,6 +173,13 @@ def calculation_volume(sound_speed, temp):
 
 # Affichage du la hauteur d'eau sur l'écran tft 
 def digital_display(volume, hum, temp):
+    """Display on the screen the value of water remain in the tank.
+
+    Args:
+        volume (float): volume of water in m3
+        hum (float): humidity value
+        temp (_type_): temperature value
+    """
     if volume_max_cuve > volume >= 0.1*volume_max_cuve:
         tft.fill(st7789.BLACK)
         tft.text(vga1_bold_16x32, "TANK LEVEL", 35, 10, st7789.CYAN)
@@ -173,33 +204,40 @@ def digital_display(volume, hum, temp):
         tft.text(vga1_8x8, text, tft.width() // 2 - length_text // 2 * vga1_8x8.WIDTH, 120, st7789.CYAN)
 
 # Allumage de l'écran par appui sur le bouton
-def button_push(p):
+def button_push():
+    """Usinge the button on the board to switch on the display screen
+    """
     tft.on()
-    digital_display()
-    return True
+    utime.sleep(7)
+    tft.off()
 
 # Gestion du système
-def handleInterrupt(timer, tfton):
+def handleInterrupt(timer):
+    """Main code to take mesure and display values on device
+
+    Args:
+        timer (int): Timer value befor callback
+    """
+    global tfton
+    global volume_available
+    global temp
+    global hum
     mesure = temperature_humidity_measurement()      # return sound_speed, temp, hum
     sound_speed=mesure[0]
     temp = mesure[1]
     hum = mesure[2]
     volume_available = calculation_volume(sound_speed, temp)       # return volume_available
     if volume_available:
+        digital_display(volume_available, hum, temp)
         if tfton:
-            tft.on()
-            analogue_display(volume_available)
-            digital_display(volume_available, hum, temp)
-            tfton = False
-            return tfton
+            return not tfton
         else:
             tft.off()
-            analogue_display(volume_available)
+        analogue_display(volume_available)
         data_analyse.send_data(volume_available)
     else:
         print("ERROR : Impossible mesurement")
-
-
+    timer.init(period=60000, mode=Timer.PERIODIC, callback=handleInterrupt)  # refresh toutes les minutes
 
 # ---------------------------------------------------------
 # --------------------- START PROGRAMME -------------------
@@ -212,15 +250,20 @@ text = "WAIT...."
 length_text = len(text)
 tft.text(vga2_bold_16x32, text, tft.width() // 2 - length_text // 2 * vga2_bold_16x32.WIDTH, 75, st7789.RED, st7789.GREEN)
 
-
 # Utilisation du bouton de facade pour allumer l'écran
 button.irq(trigger=Pin.IRQ_FALLING, handler=button_push)
 
-# Cycle de mesure toutes les 10 minutes
-timer.init(period=600000, mode=Timer.PERIODIC, callback=handleInterrupt) # refresh toutes les 10 mn
+# Lancement du callback
+handleInterrupt(timer)
+
 
 # ---- Routing Picoweb ------------------------------------ 
 app = picoweb.WebApp(__name__)
+"""Application Picoweb, use ton send information to the html page
+
+Yields:
+    _type_: _description_
+"""
 @app.route("/")
 def index(req, resp):
     yield from picoweb.start_response(resp)
@@ -241,14 +284,13 @@ def css(req, resp):
     
 @app.route("/goutte_eau.jpg")
 def index(req, resp):
-    print("Send JPG")
     yield from picoweb.start_response(resp)
     try:
         with open("web/goutte_eau.jpg", 'rb') as img_binary:
             img= img_binary.read()
         yield from resp.awrite(img)
+        print("Send JPG")
     except Exception:
         print("Image file not found.")
 
 app.run(debug=True, host = ipaddress, port = 80)
-
