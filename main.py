@@ -176,6 +176,9 @@ def button_push(p):
     utime.sleep(7)
     tft.off()
 
+def button_push_reset(p):
+    machine.reset()    
+
 # Gestion du système
 def handleInterrupt(timer):
     global tfton
@@ -212,7 +215,7 @@ tft.text(vga2_bold_16x32, text, tft.width() // 2 - length_text // 2 * vga2_bold_
 
 # Utilisation du bouton de facade pour allumer l'écran
 button.irq(trigger=Pin.IRQ_FALLING, handler=button_push)
-button_reset.irq(trigger=Pin.IRQ_FALLING, handler=machine.reset())
+button_reset.irq(trigger=Pin.IRQ_FALLING, handler=button_push_reset)
 handleInterrupt(timer)
 
 
