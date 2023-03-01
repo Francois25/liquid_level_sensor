@@ -23,4 +23,4 @@ def send_data(volume_value):
 
     except OSError as e:
         print('Failed to read/publish sensor readings.')
-        
+    
