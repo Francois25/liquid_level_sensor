@@ -1,14 +1,19 @@
 from random import uniform #generation d'un float aléatoire
 from machine import Pin, PWM, Timer #lib utilisation module ESP32
+from micropython import const
 from hcsr04 import HCSR04 #lib capteur HCSR-04
+from romfonts import vga1_8x8 as font1
+from romfonts import vga1_16x16 as font3
+from romfonts import vga1_bold_16x32 as font4
 import machine
 import utime, wificonnect
-import tft_config, st7789 #lib tft pour affichage sur ttgo t-display
+import tft_config #lib tft pour affichage sur ttgo t-display
 import picoweb #affichage de la page web, ajouter utemplate, pgk_ressources et ulogging aux lib
-import vga1_bold_16x32, vga2_16x16, vga1_8x8, vga2_bold_16x32 # font
 import capteur_temp_humi
 import wificonfig
 import data_analyse
+import esp32
+import st7789py as st7789
 
 
 # ------------------------------------------------- WIFI ----------------------------------------------------------------------
@@ -26,7 +31,7 @@ dimension_cuve_X = 1.10  # taille de la cuve en X en m
 dimension_cuve_Y = 5.68  # taille de la cuve en Y en m
 tank_capacity = int(round(maximum_water_level*dimension_cuve_X*dimension_cuve_Y))
 
-# definition des PIN du module ESP32
+# definition des PIN du module ESP32 
 frequence_led = 500
 led_bleu = PWM(Pin(27, Pin.OUT, 0), frequence_led)
 led_verte1 = PWM(Pin(26, Pin.OUT, 0), frequence_led)
@@ -41,8 +46,8 @@ button_reset = Pin(0,Pin.IN, Pin.PULL_UP)
 # Initialisation de l'écran tft
 tfton = not button
 tft = tft_config.config()
-tft.init() # initialisation de l'écran
 buzzer.duty(1)
+
 
 # Définition des variables
 surface_cuve = dimension_cuve_X * dimension_cuve_Y
@@ -83,16 +88,16 @@ def leds_init():
 # Affichage erreur sur écran tft
 def screen_error():
     tft.fill(st7789.BLACK)
-    tft.text(vga1_bold_16x32, "MESURE FAILED", 15, tft.height() // 3 - vga1_bold_16x32.HEIGHT//2, st7789.RED, st7789.BLACK)
+    tft.text(font4, "MESURE FAILED", 15, tft.height // 3 - font4.HEIGHT//2, st7789.RED, st7789.BLACK)
     text = "PUSH RESET"
     length_text=len(text)
-    tft.text(vga1_bold_16x32, text, tft.width() // 2 - length_text // 2 * vga1_bold_16x32.WIDTH, 2 * tft.height() // 3 - vga1_bold_16x32.HEIGHT//2, st7789.RED, st7789.BLACK)
+    tft.text(font4, text, tft.width // 2 - length_text // 2 * font4.WIDTH, 2 * tft.height // 3 - font4.HEIGHT//2, st7789.RED, st7789.BLACK)
 
 # Affichage d'erreur de mesure température et/ou humidité sur l'écran tft
 def screen_error_temp(temp, hum):
     text = f"T: {str(temp)} deg    -    H: {str(hum)} %"
     length_text = len(text)
-    tft.text(vga1_8x8, text, tft.width() // 2 - length_text // 2 * vga1_8x8.WIDTH, 120, st7789.RED, st7789.YELLOW)
+    tft.text(font1, text, tft.width // 2 - length_text // 2 * font1.WIDTH, 120, st7789.RED, st7789.YELLOW)
 
 
 # Allumage des LED selon le niveau d'eau mesuré
@@ -122,12 +127,14 @@ def analogue_display(volume):
 def calculation_volume(sound_speed, temp):
     data = []
     try:
-        for i in range(1, 10):
+        for i in range(10):
             mesure = HCSR04(trigger_pin=22, echo_pin=21)
             distance_mesuree = mesure.distance_cm() / 100
             data.append(distance_mesuree)
             print("mesurement ", i ,": ", distance_mesuree)
-            utime.sleep(0.05)
+            utime.sleep(0.5)
+        data.remove(max(data))
+        data.remove(min(data))
         distance_moyenne = sum(data)/len(data)
         distance_moyenne_corrigee = (distance_moyenne * temp) / 19.5
         if distance_moyenne > 0:
@@ -147,20 +154,20 @@ def calculation_volume(sound_speed, temp):
 
 # Affichage du la hauteur d'eau sur l'écran tft 
 def digital_display(volume, hum, temp):
-    if volume_max_cuve > volume >= 0.1*volume_max_cuve:
+    if volume >= (0.95*volume_max_cuve):
+        tft.fill(st7789.CYAN)
+        tft.text(font4, "FULL TANK ", 40, tft.height // 2 - font4.HEIGHT//2, st7789.BLUE, st7789.CYAN)
+    elif volume_max_cuve > volume >= 0.1*volume_max_cuve:
         tft.fill(st7789.BLACK)
-        tft.text(vga1_bold_16x32, "TANK LEVEL", 35, 10, st7789.CYAN)
-        tft.text(vga2_16x16, f"Capacity: {str(tank_capacity)}m3", 6, 55, st7789.YELLOW)
+        tft.text(font4, "TANK LEVEL", 35, 10, st7789.CYAN)
+        tft.text(font3, f"Capacity: {str(tank_capacity)}m3", 6, 55, st7789.YELLOW)
         text = f"Remainder:{str(volume)}"
         length_text = len(text)
-        tft.text(vga2_16x16, text, tft.width() // 2 - length_text // 2 * vga2_16x16.WIDTH, 80, st7789.GREEN)
+        tft.text(font3, text, tft.width // 2 - length_text // 2 * font3.WIDTH, 80, st7789.GREEN)
     elif 0 <= volume < 0.1*volume_max_cuve:
         tft.fill(st7789.YELLOW)
-        tft.text(vga1_bold_16x32, "EMPTY TANK", 45, tft.height() // 3 - vga1_bold_16x32.HEIGHT//2, st7789.RED, st7789.YELLOW)
-        tft.text(vga1_bold_16x32, "LEVEL < 1 m3", 15, (tft.height() // 3)*2 - vga1_bold_16x32.HEIGHT//2, st7789.RED, st7789.YELLOW)
-    elif volume >= volume_max_cuve:
-        tft.fill(st7789.CYAN)
-        tft.text(vga1_bold_16x32, "FULL TANK ", 40, tft.height() // 2 - vga1_bold_16x32.HEIGHT//2, st7789.BLUE, st7789.CYAN)
+        tft.text(font4, "EMPTY TANK", 45, tft.height // 3 - font4.HEIGHT//2, st7789.RED, st7789.YELLOW)
+        tft.text(font4, "LEVEL < 1 m3", 15, (tft.height // 3)*2 - font4.HEIGHT//2, st7789.RED, st7789.YELLOW)
     else:
         screen_error()
     if temp == 15 and hum == 0:
@@ -168,13 +175,13 @@ def digital_display(volume, hum, temp):
     else:
         text = f"T: {str(temp)} deg  -  H: {str(hum)} %"
         length_text = len(text)
-        tft.text(vga1_8x8, text, tft.width() // 2 - length_text // 2 * vga1_8x8.WIDTH, 120, st7789.CYAN)
+        tft.text(font1, text, tft.width // 2 - length_text // 2 * font1.WIDTH, 120, st7789.CYAN)
 
 # Allumage de l'écran par appui sur le bouton
 def button_push(p):
-    tft.on()
-    utime.sleep(7)
-    tft.off()
+    tft.sleep_mode(False)
+    utime.sleep(5)
+    tft.sleep_mode(True)
 
 def button_push_reset(p):
     machine.reset()    
@@ -189,18 +196,18 @@ def handleInterrupt(timer):
     sound_speed=mesure[0]
     temp = mesure[1]
     hum = mesure[2]
-    volume_available = calculation_volume(sound_speed, temp)       # return volume_available
+    volume_available = round(uniform(9, 10.0), 2)       # return volume_available
     if volume_available:
         digital_display(volume_available, hum, temp)
         if tfton:
             return not tfton
         else:
-            tft.off()
+            tft.sleep_mode(True)
         analogue_display(volume_available)
         data_analyse.send_data(volume_available, temp)
     else:
         print("ERROR : Impossible mesurement")
-    timer.init(period=10000, mode=Timer.PERIODIC, callback=handleInterrupt)  # refresh toutes les minutes
+    timer.init(period=300000, mode=Timer.PERIODIC, callback=handleInterrupt)  # refresh toutes les minutes
 
 # ---------------------------------------------------------
 # --------------------- START PROGRAMME -------------------
@@ -208,10 +215,11 @@ def handleInterrupt(timer):
 tft.fill(st7789.GREEN)
 text = "POWER ON"
 length_text = len(text)
-tft.text(vga2_bold_16x32, text, tft.width() // 2 - length_text // 2 * vga2_bold_16x32.WIDTH, 30, st7789.RED, st7789.GREEN)
+tft.text(font4, text, tft.width // 2 - length_text // 2 * font4.WIDTH, 30, st7789.RED, st7789.GREEN)
 text = "WAIT...."
 length_text = len(text)
-tft.text(vga2_bold_16x32, text, tft.width() // 2 - length_text // 2 * vga2_bold_16x32.WIDTH, 75, st7789.RED, st7789.GREEN)
+tft.text(font4, text, tft.width // 2 - length_text // 2 * font4.WIDTH, 75, st7789.RED, st7789.GREEN)
+utime.sleep(3)
 
 # Utilisation du bouton de facade pour allumer l'écran
 button.irq(trigger=Pin.IRQ_FALLING, handler=button_push)
@@ -251,6 +259,5 @@ def index(req, resp):
         print("Image file not found.")
 
 app.run(debug=True, host = ipaddress, port = 80)
-
 
 
