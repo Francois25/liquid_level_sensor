@@ -2,16 +2,9 @@ from utime import localtime
 import urequests as requests
 import wificonfig
 
-def send_data(volume_value):
-    """Send value of water tank volume to a google sheet for annual analyse
-
-    Args:
-        volume_value (float): Volume of water remain in tank
-    """
+def send_data(volume_value, temp):
     api_key = wificonfig.api_key
-    volume = str(volume_value)
-    volume = volume.replace(".", ",")
-    niveau = "?niveau="+ volume
+    niveau = f"?niveau={str(volume_value)}"
 
     try:
         request_headers = {'Content-Type': 'application/x-www-form-urlencoded' }
@@ -22,5 +15,5 @@ def send_data(volume_value):
         print(f"Donnée sauvegarder: {volume_value}")
 
     except OSError as e:
-        print('Failed to read/publish sensor readings.')
+        print('Failed to read/publish sensor readings.', e)
     
