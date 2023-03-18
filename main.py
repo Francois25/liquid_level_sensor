@@ -12,7 +12,6 @@ import picoweb #affichage de la page web, ajouter utemplate, pgk_ressources et u
 import capteur_temp_humi
 import wificonfig
 import data_analyse
-import esp32
 import st7789py as st7789
 
 
@@ -129,7 +128,7 @@ def calculation_volume(sound_speed, temp):
     try:
         for i in range(10):
             mesure = HCSR04(trigger_pin=22, echo_pin=21)
-            distance_mesuree = mesure.distance_cm() / 100
+            distance_mesuree = mesure.distance_cm()  / (1000000/sound_speed)
             data.append(distance_mesuree)
             print("mesurement ", i ,": ", distance_mesuree)
             utime.sleep(0.5)
