@@ -128,20 +128,19 @@ def calculation_volume(sound_speed, temp):
     try:
         for i in range(10):
             mesure = HCSR04(trigger_pin=22, echo_pin=21)
-            distance_mesuree = mesure.distance_cm()  / (1000000/sound_speed)
+            distance_mesuree = mesure.distance_cm() / (1000000/sound_speed)
             data.append(distance_mesuree)
             print("mesurement ", i ,": ", distance_mesuree)
             utime.sleep(0.5)
-        data.remove(max(data))
-        data.remove(min(data))
+        maxi = max(data)
+        mini = min(data)
+        data.remove(maxi)
+        data.remove(mini)
         distance_moyenne = sum(data)/len(data)
-        distance_moyenne_corrigee = (distance_moyenne * temp) / 19.5
+        print(f'Valeurs exclues => mini: {round(mini, 4)} et maxi: {round(maxi), 4}')
         if distance_moyenne > 0:
-            print(f"average distance: {distance_moyenne}m")
-            print(f"distance used: {distance_moyenne_corrigee}m")
-            volume_available_avant_correction = round(((maximum_water_level + sensor_position) * surface_cuve) - (distance_moyenne * surface_cuve), 2)
-            print(f"Volume before correction: {volume_available_avant_correction}m3")
-            volume_available = round(((maximum_water_level + sensor_position) * surface_cuve) - (distance_moyenne_corrigee * surface_cuve), 2)
+            print(f"Average distance: {round(distance_moyenne, 4)}m")
+            volume_available = round(((maximum_water_level + sensor_position) * surface_cuve) - (distance_moyenne * surface_cuve), 2)
             print(f"Available volume used: {volume_available}m3")
             return volume_available
         else:
@@ -195,7 +194,7 @@ def handleInterrupt(timer):
     sound_speed=mesure[0]
     temp = mesure[1]
     hum = mesure[2]
-    volume_available = round(uniform(9, 10.0), 2)       # return volume_available
+    volume_available = calculation_volume(sound_speed, temp) #round(uniform(9, 10.0), 2)       # return volume_available
     if volume_available:
         digital_display(volume_available, hum, temp)
         if tfton:
@@ -258,5 +257,3 @@ def index(req, resp):
         print("Image file not found.")
 
 app.run(debug=True, host = ipaddress, port = 80)
-
-
