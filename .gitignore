@@ -9,3 +9,8 @@ wificonfig.py
 statistics.py
 .vscode
 niveau_eau.json
+font/vga1_8x8.py
+font/vga1_bold_16x32.py
+font/vga2_16x16.py
+font/vga2_bold_16x16.py
+font/vga2_bold_16x32.py
