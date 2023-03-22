@@ -1,6 +1,5 @@
-import machine, time
 from machine import Pin
-import __main__
+import machine, time
 
 __version__ = '0.2.0'
 __author__ = 'Roberto Sánchez'
@@ -72,5 +71,5 @@ class HCSR04:
         # (the pulse walk the distance twice) and by 29.1 becasue
         # the sound speed on air (343.2 m/s), that It's equivalent to
         # 0.034320 cm/us that is 1m each 29.1us
-        cms = (pulse_time / 2) / (10000/__main__.sound_speed)
+        cms = (pulse_time / 2)
         return cms

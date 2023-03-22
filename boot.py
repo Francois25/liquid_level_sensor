@@ -1,4 +1,7 @@
 # This file is executed on every boot (including wake-boot from deepsleep)
+import esp
 import gc
-gc.collect()
+
+esp.osdebug(None)
 gc.enable()
+gc.collect()
