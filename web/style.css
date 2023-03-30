@@ -24,7 +24,7 @@ h1 {
   margin-top: 0px;
 }
 .centre {
-  color: rgb(83 185 161);
+  color: rgb(83, 185, 161);
   text-align: center;
   width: 100%;
 }
@@ -50,4 +50,13 @@ p.dev {
   color: rgb(0, 0, 0);
   font-size: 13px;
   margin-bottom: 0px;
+}
+
+button {
+  background-color: rgb(212, 191, 156);
+  color: rgb(83, 185, 161);
+  font-size: 20px;
+  box-shadow: 0px 0px 40px 2px #76e4ffc0;
+  border-width: 0px;
+  font-weight: bold;
 }
